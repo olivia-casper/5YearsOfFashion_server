@@ -1,11 +1,22 @@
 body {
     font-family: Arial, Helvetica, sans-serif;
-    padding: 30px;
-    background-color: #f9f9f9;
-    color: #333;
-}
-
-h1 {
-    color: var(--babypink);
-    text-shadow: 1px 1px var(--darkpink);
-}
+    background-color: #f7f7f7;
+    margin: 0;
+    padding: 20px;
+  }
+  
+  h1 {
+    color: lightblue;
+    text-align: center;
+  }
+  
+  a {
+    color: #ff69b4;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
