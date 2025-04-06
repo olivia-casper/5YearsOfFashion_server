@@ -3,15 +3,16 @@ body {
     background-color: #f7f7f7;
     margin: 0;
     padding: 20px;
+    color:dimgray;
   }
   
   h1 {
-    color: lightblue;
+    color: #fb8899;
     text-align: center;
   }
   
   a {
-    color: #ff69b4;
+    color: #edbabe;
     text-decoration: none;
     font-weight: bold;
   }
