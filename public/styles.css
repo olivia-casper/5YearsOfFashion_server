@@ -1,0 +1,11 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 30px;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+h1 {
+    color: var(--babypink);
+    text-shadow: 1px 1px var(--darkpink);
+}
