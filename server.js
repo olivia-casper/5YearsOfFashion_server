@@ -73,13 +73,8 @@ const trends = [
   }
 ];
 
-// Prediction list (POST/GET/DELETE)
-const predictions = [];
-
-// Joi validation schema
-const predictionSchema = Joi.object({
-  text: Joi.string().min(2).required()
-});
+// In-memory predictions (these reset when the server restarts)
+let predictions = [];
 
 // Routes
 app.get("/", (req, res) => {
@@ -90,29 +85,32 @@ app.get("/api/trends", (req, res) => {
   res.json(trends);
 });
 
+// GET all predictions
 app.get("/api/predictions", (req, res) => {
   res.json(predictions);
 });
 
+// POST a new prediction
 app.post("/api/predictions", (req, res) => {
-  const { error, value } = predictionSchema.validate(req.body);
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
+  const { text } = req.body;
+  if (!text || text.trim().length < 2) {
+    return res.status(400).json({ message: "Prediction must be at least 2 characters." });
   }
-  predictions.push(value.text);
-  res.status(201).json({ success: true });
+  predictions.push(text.trim());
+  res.status(201).json({ message: "Prediction added!" });
 });
 
+// DELETE prediction by index
 app.delete("/api/predictions/:index", (req, res) => {
   const index = parseInt(req.params.index);
   if (isNaN(index) || index < 0 || index >= predictions.length) {
-    return res.status(400).json({ error: "Invalid index" });
+    return res.status(400).json({ message: "Invalid index" });
   }
   predictions.splice(index, 1);
-  res.json({ success: true });
+  res.json({ message: "Prediction deleted" });
 });
 
-// Server listen
+// Start the server
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
