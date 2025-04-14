@@ -73,7 +73,7 @@ const trends = [
   }
 ];
 
-// In-memory predictions (these reset when the server restarts)
+// Predictions 
 let predictions = [];
 
 // Routes
@@ -85,12 +85,10 @@ app.get("/api/trends", (req, res) => {
   res.json(trends);
 });
 
-// GET all predictions
 app.get("/api/predictions", (req, res) => {
   res.json(predictions);
 });
 
-// POST a new prediction
 app.post("/api/predictions", (req, res) => {
   const { text } = req.body;
   if (!text || text.trim().length < 2) {
@@ -100,7 +98,6 @@ app.post("/api/predictions", (req, res) => {
   res.status(201).json({ message: "Prediction added!" });
 });
 
-// DELETE prediction by index
 app.delete("/api/predictions/:index", (req, res) => {
   const index = parseInt(req.params.index);
   if (isNaN(index) || index < 0 || index >= predictions.length) {
