@@ -119,6 +119,21 @@ app.delete("/api/predictions/:index", (req, res) => {
   }
 });
 
+// PUT update prediction by index
+app.put("/api/predictions/:index", (req, res) => {
+  const index = parseInt(req.params.index);
+  const { error, value } = predictionSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+  if (index >= 0 && index < predictions.length) {
+    predictions[index] = value;
+    return res.status(200).json({ message: "Prediction updated!", prediction: value });
+  } else {
+    return res.status(404).json({ error: "Invalid index" });
+  }
+});
+
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
