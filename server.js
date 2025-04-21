@@ -73,10 +73,16 @@ const trends = [
   }
 ];
 
-// Predictions 
-let predictions = [];
+const predictions = [];
 
-// Routes
+// Validation schema
+const predictionSchema = Joi.object({
+  name: Joi.string().min(2).required(),
+  image: Joi.string().uri().required(),
+  description: Joi.string().min(5).required(),
+});
+
+// ROUTES
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -85,30 +91,35 @@ app.get("/api/trends", (req, res) => {
   res.json(trends);
 });
 
+// GET predictions
 app.get("/api/predictions", (req, res) => {
   res.json(predictions);
 });
 
+// POST new prediction
 app.post("/api/predictions", (req, res) => {
-  const { text } = req.body;
-  if (!text || text.trim().length < 2) {
-    return res.status(400).json({ message: "Prediction must be at least 2 characters." });
+  const { error, value } = predictionSchema.validate(req.body);
+  if (error) {
+    console.log("Validation error:", error.details[0].message);
+    return res.status(400).json({ error: error.details[0].message });
   }
-  predictions.push(text.trim());
-  res.status(201).json({ message: "Prediction added!" });
+
+  predictions.push(value);
+  res.status(201).json({ message: "Prediction added!", prediction: value });
 });
 
+// DELETE prediction
 app.delete("/api/predictions/:index", (req, res) => {
   const index = parseInt(req.params.index);
-  if (isNaN(index) || index < 0 || index >= predictions.length) {
-    return res.status(400).json({ message: "Invalid index" });
+  if (index >= 0 && index < predictions.length) {
+    predictions.splice(index, 1);
+    return res.status(200).json({ message: "Prediction deleted" });
+  } else {
+    return res.status(404).json({ error: "Invalid index" });
   }
-  predictions.splice(index, 1);
-  res.json({ message: "Prediction deleted" });
 });
 
-// Start the server
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
