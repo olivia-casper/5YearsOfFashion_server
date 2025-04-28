@@ -131,46 +131,36 @@ app.post("/api/predictions", async (req, res) => {
 });
 
 // Update a prediction
-app.put("/api/predictions/:index", async (req, res) => {
+app.put("/api/predictions/:_id", async (req, res) => {
   const { error, value } = predictionSchema.validate(req.body);
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
-  }
+  if (error) return res.status(400).json({ error: error.details[0].message });
 
   try {
-    const allPredictions = await Predictions.find();
-    const doc = allPredictions[req.params.index];
-
-    if (!doc) {
-      return res.status(404).json({ error: "Invalid index" });
-    }
+    const doc = await Predictions.findById(req.params._id);
+    if (!doc) return res.status(404).json({ error: "Prediction not found" });
 
     doc.name = value.name;
     doc.image = value.image;
     doc.description = value.description;
 
-    const updatedPrediction = await doc.save();
-    res.json({ message: "Prediction updated!", prediction: updatedPrediction });
+    const updated = await doc.save();
+    res.json({ message: "Prediction updated!", prediction: updated });
   } catch (err) {
-    console.error("Error updating prediction:", err);
+    console.error("Update error:", err);
     res.status(500).json({ error: "Failed to update prediction" });
   }
 });
 
 // Delete a prediction
-app.delete("/api/predictions/:index", async (req, res) => {
+app.delete("/api/predictions/:_id", async (req, res) => {
   try {
-    const allPredictions = await Predictions.find();
-    const doc = allPredictions[req.params.index];
-
-    if (!doc) {
-      return res.status(404).json({ error: "Invalid index" });
-    }
+    const doc = await Predictions.findById(req.params._id);
+    if (!doc) return res.status(404).json({ error: "Prediction not found" });
 
     await doc.deleteOne();
     res.json({ message: "Prediction deleted" });
   } catch (err) {
-    console.error("Error deleting prediction:", err);
+    console.error("Delete error:", err);
     res.status(500).json({ error: "Failed to delete prediction" });
   }
 });
