@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const Joi = require("joi");
+const mongoose = require("mongoose");
 
 const app = express();
 
@@ -73,68 +74,120 @@ const trends = [
   }
 ];
 
-const predictions = [];
 
-// Validation schema
+// Joi schema for validation
 const predictionSchema = Joi.object({
   name: Joi.string().min(2).required(),
   image: Joi.string().uri().required(),
   description: Joi.string().min(5).required(),
 });
 
-// ROUTES
+// MongoDB schema + model
+const predictionsSchema = new mongoose.Schema({
+  name: String,
+  image: String,
+  description: String
+});
+
+const Predictions = mongoose.model("Predictions", predictionsSchema);
+
+// Serve homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// Serve trend data
 app.get("/api/trends", (req, res) => {
   res.json(trends);
 });
 
-// GET predictions
-app.get("/api/predictions", (req, res) => {
-  res.json(predictions);
+// Get all predictions
+app.get("/api/predictions", async (req, res) => {
+  try {
+    const predictions = await Predictions.find();
+    res.json(predictions);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch predictions" });
+  }
 });
 
-// POST new prediction
-app.post("/api/predictions", (req, res) => {
+// Add a new prediction
+app.post("/api/predictions", async (req, res) => {
   const { error, value } = predictionSchema.validate(req.body);
+
   if (error) {
     console.log("Validation error:", error.details[0].message);
     return res.status(400).json({ error: error.details[0].message });
   }
 
-  predictions.push(value);
-  res.status(201).json({ message: "Prediction added!", prediction: value });
-});
-
-// DELETE prediction
-app.delete("/api/predictions/:index", (req, res) => {
-  const index = parseInt(req.params.index);
-  if (index >= 0 && index < predictions.length) {
-    predictions.splice(index, 1);
-    return res.status(200).json({ message: "Prediction deleted" });
-  } else {
-    return res.status(404).json({ error: "Invalid index" });
+  try {
+    const prediction = new Predictions(value);
+    const savedPrediction = await prediction.save();
+    res.status(201).json({ message: "Prediction added!", prediction: savedPrediction });
+  } catch (err) {
+    console.error("Error saving prediction:", err);
+    res.status(500).json({ error: "Failed to save prediction" });
   }
 });
 
-// PUT update prediction by index
-app.put("/api/predictions/:index", (req, res) => {
-  const index = parseInt(req.params.index);
+// Update a prediction
+app.put("/api/predictions/:index", async (req, res) => {
   const { error, value } = predictionSchema.validate(req.body);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
-  if (index >= 0 && index < predictions.length) {
-    predictions[index] = value;
-    return res.status(200).json({ message: "Prediction updated!", prediction: value });
-  } else {
-    return res.status(404).json({ error: "Invalid index" });
+
+  try {
+    const allPredictions = await Predictions.find();
+    const doc = allPredictions[req.params.index];
+
+    if (!doc) {
+      return res.status(404).json({ error: "Invalid index" });
+    }
+
+    doc.name = value.name;
+    doc.image = value.image;
+    doc.description = value.description;
+
+    const updatedPrediction = await doc.save();
+    res.json({ message: "Prediction updated!", prediction: updatedPrediction });
+  } catch (err) {
+    console.error("Error updating prediction:", err);
+    res.status(500).json({ error: "Failed to update prediction" });
   }
 });
 
-const port = process.env.PORT || 3001;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+// Delete a prediction
+app.delete("/api/predictions/:index", async (req, res) => {
+  try {
+    const allPredictions = await Predictions.find();
+    const doc = allPredictions[req.params.index];
+
+    if (!doc) {
+      return res.status(404).json({ error: "Invalid index" });
+    }
+
+    await doc.deleteOne();
+    res.json({ message: "Prediction deleted" });
+  } catch (err) {
+    console.error("Error deleting prediction:", err);
+    res.status(500).json({ error: "Failed to delete prediction" });
+  }
 });
+
+// Connect to MongoDB and start server
+mongoose
+  .connect("mongodb+srv://oliviaanncasper:nortonc$@cluster0.pvuswnp.mongodb.net/", {
+    dbName: "fiveyearsoffashion", 
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+
+    const port = process.env.PORT || 3001;
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Could not connect to MongoDB", error);
+  });
